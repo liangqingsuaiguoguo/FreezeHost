@@ -1,26 +1,36 @@
-# FreezeHost 续期多账号版
+# FreezeHost 自动续期 & 重启
 
 > ⭐ 觉得有用？给个 Star 支持一下！
 >
 > 注册地址：[https://free.freezehost.pro](https://free.freezehost.pro)
 
-自动续期 [FreezeHost](https://free.freezehost.pro) 免费服务器，防止到期被删除。
+用于 [FreezeHost](https://free.freezehost.pro) 免费服务器的自动续期与重启管理，基于 GitHub Actions，使用 Playwright 模拟浏览器操作，最多支持 5 个 Discord 账号。
 
-通过 GitHub Actions 定时运行，使用 Playwright 模拟浏览器操作完成续期，最多支持 5 个 Discord 账号，支持 Telegram 通知、WARP 代理、智能调度。
+## 包含的 Workflow
+
+| Workflow 名称 | 功能 | 触发方式 |
+|---|---|---|
+| `FreezeHost 续期多账号版` | 自动续期服务器，到期前 2 天运行，自动更新 Cron | 定时 + 手动 |
+| `FreezeHost 自动重启` | 重启/开机服务器，支持指定 Discord 账号 | 手动 + API |
 
 ## 功能
 
-- 自动登录 Discord OAuth 并续期所有服务器
-- 支持最多 5 个 Discord Token 分别续期，各账号独立 Cron 计划
-- 自动处理站点宕机重试（最多 3 次）
-- 续期后自动计算下次运行时间（到期前 2 天），并更新 Workflow 中的 Cron 表达式
-- 通过 WARP 代理确保网络连通性
-- Telegram 机器人推送续期结果（含合并截图）
-- 仅需配置 Secrets 即可一键部署
+### 续期
+- 自动 Discord OAuth 登录并续期名下所有服务器
+- 最多支持 5 个 Discord Token，各自拥有独立 Cron 计划
+- 站点宕机自动重试（最多 3 次）
+- 续期后计算下次运行时间（到期前 2 天），自动更新 Workflow 中的 Cron 表达式
+- WARP 代理保障网络连通
+- Telegram 通知推送续期结果（含合并截图）
+
+### 重启
+- 自动检测服务器电源状态（运行/关机/过渡状态）
+- 运行中 → 执行重启；关机 → 执行开机；过渡 → 等待稳定后操作
+- 重启/开机结果 Telegram 通知（含截图）
 
 ## 配置 Secrets
 
-在仓库 `Settings → Secrets and variables → Actions` 中添加以下密钥：
+在仓库 `Settings → Secrets and variables → Actions` 中添加：
 
 | Secret 名称 | 必填 | 说明 |
 |---|---|---|
@@ -29,64 +39,97 @@
 | `FREEZEHOST_DISCORD_TOKEN_3` | ❌ | 第 3 个 Discord 账号 Token（可选） |
 | `FREEZEHOST_DISCORD_TOKEN_4` | ❌ | 第 4 个 Discord 账号 Token（可选） |
 | `FREEZEHOST_DISCORD_TOKEN_5` | ❌ | 第 5 个 Discord 账号 Token（可选） |
-| `REPO_TOKEN` | ✅ | 具有 `repo` 和 `workflow` 权限的 Personal Access Token，用于自动更新 Cron |
+| `REPO_TOKEN` | ✅ （仅续期） | 具有 `repo` 和 `workflow` 权限的 PAT，用于自动更新 Cron |
 | `TG_BOT_TOKEN` | ❌ | Telegram Bot Token，用于推送通知 |
 | `TG_CHAT_ID` | ❌ | Telegram 接收消息的 Chat ID |
 
 ### 获取 Discord Token
 
-1. 在浏览器中登录 [https://discord.com/](https://discord.com/)
-2. 按 **F12** 打开开发者工具 → 切换到 **网络（Network）**
-3. 选择 **Fetch/XHR**，然后刷新页面
-4. 点击任意一个 `discord.com/api` 请求
-5. 在 **Headers（标头）** 中找到 `Authorization`
-6. 复制其值作为 `FREEZEHOST_DISCORD_TOKEN_*`
-
+1. 在浏览器中登录 [Discord](https://discord.com)
+2. 按 `F12` 打开开发者工具 → `Network`（网络）
+3. 筛选 `Fetch/XHR`，刷新页面
+4. 点击任意 `discord.com/api` 请求
+5. 在 `Headers`（请求头）中找到 `Authorization` 并复制完整值
+6. 填入对应 `FREEZEHOST_DISCORD_TOKEN_*`
 > 📌 图片参考：![Cookie格式](img/Cookie.png)
 
 ⚠️ 注意：该值相当于账号凭证，请勿泄露
 
-### 获取 REPO_TOKEN
+### 获取 REPO_TOKEN（仅续期需要）
 
-1. 访问 [GitHub Tokens](https://github.com/settings/tokens) → Generate new token (classic)
-2. 勾选 `repo` (全部) 和 `workflow` 权限
-3. 生成并复制 Token
+1. 打开 [GitHub Tokens](https://github.com/settings/tokens) → Generate new token (classic)
+2. 勾选 `repo`（全部）与 `workflow`
+3. 生成后复制并填入 Secret
 
 ### Telegram 通知（可选）
 
-1. 通过 [@BotFather](https://t.me/BotFather) 创建 Bot，获取 `TG_BOT_TOKEN`
-2. 获取你的 Chat ID（可发送消息给 bot 后访问 `https://api.telegram.org/bot<TOKEN>/getUpdates`）
-3. 填入对应 Secret
+1. [@BotFather](https://t.me/BotFather) 创建 Bot 获得 `TG_BOT_TOKEN`
+2. 向 Bot 发送任意消息，访问 `https://api.telegram.org/bot<TOKEN>/getUpdates` 获取 `chat.id` 作为 `TG_CHAT_ID`
 
-## 使用
+## 使用方法
 
-1. Fork 本仓库
-2. 启用 Actions（如果默认未启用）
-3. 添加上述 Secrets
-4. 脚本会自动按 Cron 运行（默认已配置 5 个独立 Cron，对应 5 个 Token）
-5. 也可在 Actions 页面手动触发 (`workflow_dispatch`)，选择 Token 编号执行
+### 1. Fork 并启用 Actions
+- Fork 本仓库
+- 在仓库 Actions 页面启用 workflows（若未自动启用）
 
-首次运行后，Workflow 会自动根据剩余天数调整对应 Token 的 Cron 时间，下次运行将精确到到期前 2 天。
+### 2. 配置 Secrets
+- 按上方表格添加 Secrets，至少配置 `FREEZEHOST_DISCORD_TOKEN_1`
 
-## 工作原理
+### 3. 选择触发方式
 
-1. **定时触发**：每个 Token 拥有独立的 Cron 行，避免冲突（UTC 1-5 点各一个）
-2. **确定 Token**：根据触发小时或手动选择，匹配对应 Secret
-3. **环境准备**：拉取仓库、安装 Python 及 Playwright，启动 WARP 代理，修复 DNS
-4. **登录续期**：Python 脚本打开无头浏览器，通过 Discord OAuth 登录，发现所有服务器，逐一检查剩余时间并执行续期
-5. **结果提取**：从续期日志中提取剩余天数最小值
-6. **智能调度**：若剩余天数 > 2 天，设置下次运行时间为“剩余天数 - 2”天后；否则 12 小时后重试
-7. **自动提交**：使用 `REPO_TOKEN` 修改 Workflow 文件中对应 Cron 行并推送
-8. **通知**：通过 Telegram 发送续期结果截图（所有服务器合并为一张图片）
+#### 自动续期（定时）
+- 默认已配置 5 条独立 Cron 规则，分别对应 5 个 Token（UTC 01~05 每个整点错开）
+- 首次运行后，Workflow 会根据剩余天数自动更新对应 Cron，之后将在到期前 2 天准时运行
+
+#### 手动触发
+- **续期**：Actions → `FreezeHost 续期多账号版` → `Run workflow`，选择 Token 编号
+- **重启**：Actions → `FreezeHost 自动重启` → `Run workflow`，选择 Token 编号
+
+#### API 触发（仅重启）
+可通过 `curl` 或任何 HTTP 客户端调用 GitHub REST API 手动触发重启 Workflow。
+
+```bash
+curl -X POST "https://api.github.com/repos/<用户名>/<仓库名>/actions/workflows/FreezeHost_Restart.yml/dispatches" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer <你的 PAT 或 GITHUB_TOKEN>" \
+  -d '{"ref":"main","inputs":{"token_number":"2"}}'
+```
+
+> 注意：
+> - 替换 `<用户名>`、`<仓库名>` 以及 Token
+> - `token_number` 可选 `1`~`5`，对应已配置的 Secret
+> - 使用具有 `workflow` 权限的 Token（如 `REPO_TOKEN` 或 Fine-grained PAT）
+> - 文件名请与 `.github/workflows/` 下实际文件名一致
+
+## 工作原理（续期）
+
+1. 根据 Cron 或手动选择确定要使用的 Token 编号
+2. 拉取仓库、安装 Playwright，启动 WARP 代理
+3. Python 脚本模拟浏览器登录 FreezeHost（Discord OAuth）
+4. 扫描 Dashboard 下所有服务器，逐一检查剩余时间并执行续期
+5. 提取最小剩余天数，计算下次运行时间（到期前 2 天）
+6. 使用 `REPO_TOKEN` 自动更新对应 Cron 行并提交
+7. 通过 Telegram 发送结果截图
+
+## 工作原理（重启）
+
+1. 手动或 API 触发时指定 Token 编号
+2. 拉取仓库、安装 Playwright，启动 WARP 代理
+3. 脚本登录 FreezeHost，发现所有服务器
+4. 检测每台服务器电源状态：
+   - 运行中 → 执行重启
+   - 关机 → 执行开机
+   - 过渡中 → 等待稳定后按上述规则处理
+5. 将操作结果通过 Telegram 推送（含截图）
 
 ## 注意事项
 
-- 请确保至少配置一个 `FREEZEHOST_DISCORD_TOKEN_1`，否则无法续期
-- `REPO_TOKEN` 必须具有 `workflow` 权限，否则无法自动更新 Cron 表达式
-- 如果某个 Token 下无服务器，脚本会发送无服务器通知并跳过
-- 脚本内置站点宕机检测与重试机制（最多 3 次），若持续宕机会在 Telegram 通知
-- 截图和日志中的敏感信息（Token、邮箱、服务器 ID 等）已做脱敏处理
-- 若需更多 Token，可参考现有 Workflow 结构扩展
+- 至少配置 `FREEZEHOST_DISCORD_TOKEN_1` 才能使用
+- 续期需要 `REPO_TOKEN` 拥有 `workflow` 权限，否则无法自动调整 Cron
+- 重启 Workflow 没有定时计划，仅限手动或 API 触发
+- 某 Token 下若无服务器，会收到“无服务器”通知并跳过
+- 站点宕机时续期脚本会自动重试 3 次，若持续失败将推送通知
+- 敏感信息（Token、邮箱、服务器 ID）在日志与截图中已脱敏
 
 ---
 
