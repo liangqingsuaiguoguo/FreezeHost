@@ -296,13 +296,13 @@ jobs:
 
           echo "::notice::✅ 成功更新 workflow 文件"
 
-      - name: 上传截图
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: renew-screenshots-token-${{ steps.select_token.outputs.token_number }}
-          path: screenshots/
-          retention-days: 7
+#      - name: 上传截图
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: renew-screenshots-token-${{ steps.select_token.outputs.token_number }}
+#          path: screenshots/
+#          retention-days: 7
 
       - name: 清理历史运行记录
         if: always()
