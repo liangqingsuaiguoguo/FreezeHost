@@ -35,9 +35,16 @@
 
 ### 获取 Discord Token
 
-1. 在浏览器中登录 [FreezeHost](https://free.freezehost.pro)（使用 Discord 登录）
-2. 打开开发者工具 (F12) → Application → Local Storage → 查找 `token` 字段（引号内的字符串）
-3. 复制该值作为 `FREEZEHOST_DISCORD_TOKEN_*`
+1. 在浏览器中登录 [https://discord.com/](https://discord.com/)
+2. 按 **F12** 打开开发者工具 → 切换到 **网络（Network）**
+3. 选择 **Fetch/XHR**，然后刷新页面
+4. 点击任意一个 `discord.com/api` 请求
+5. 在 **Headers（标头）** 中找到 `Authorization`
+6. 复制其值作为 `FREEZEHOST_DISCORD_TOKEN_*`
+
+> 📌 图片参考：![Cookie格式](img/Cookie.png)
+
+⚠️ 注意：该值相当于账号凭证，请勿泄露
 
 ### 获取 REPO_TOKEN
 
